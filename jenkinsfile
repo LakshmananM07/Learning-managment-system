@@ -1,12 +1,100 @@
 pipeline {
     agent any
 
+    parameters {
+        string(name: 'DOCKERHUB_USERNAME', defaultValue: 'lakshmanan2007', description: 'DockerHub Username')
+        string(name: 'IMAGE_NAME', defaultValue: 'lms', description: 'Docker Repository Name')
+        string(name: 'IMAGE_TAG', defaultValue: 'v1', description: 'Image Tag')
+        string(name: 'DOCKERHUB_CREDENTIALS_ID', defaultValue: 'lakshmanan2007', description: 'Jenkins Credentials ID for DockerHub')
+        string(name: 'PROJECT_DIR', defaultValue: 'E:/Agile', description: 'Project Directory')
+    }
+
+    environment {
+        FULL_IMAGE = "${params.DOCKERHUB_USERNAME}/${params.IMAGE_NAME}:${params.IMAGE_TAG}"
+    }
+
     stages {
-        stage('Verify Jenkins') {
+        stage('Checkout / Setup') {
             steps {
-                bat 'git --version'
-                echo 'LMS v1 Jenkins pipeline is working'
+                script {
+                    try {
+                        checkout scm
+                    } catch (Exception e) {
+                        echo "No SCM configured, using local directory: ${params.PROJECT_DIR}"
+                    }
+                }
             }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                dir(params.PROJECT_DIR) {
+                    script {
+                        if (isUnix()) {
+                            sh "docker build -t ${FULL_IMAGE} ."
+                        } else {
+                            bat "docker build -t ${FULL_IMAGE} ."
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Push to DockerHub') {
+            steps {
+                dir(params.PROJECT_DIR) {
+                    script {
+                        withCredentials([usernamePassword(credentialsId: params.DOCKERHUB_CREDENTIALS_ID, usernameVariable: 'DH_USER', passwordVariable: 'DH_PASS')]) {
+                            if (isUnix()) {
+                                sh "echo \$DH_PASS | docker login -u \$DH_USER --password-stdin"
+                                sh "docker push ${FULL_IMAGE}"
+                            } else {
+                                bat "echo %DH_PASS% | docker login -u %DH_USER% --password-stdin"
+                                bat "docker push ${FULL_IMAGE}"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                dir(params.PROJECT_DIR) {
+                    script {
+                        if (isUnix()) {
+                            sh "kubectl apply -f k8s/v1-deployment.yaml"
+                            sh "kubectl apply -f k8s/v1-service.yaml"
+                        } else {
+                            bat "kubectl apply -f k8s/v1-deployment.yaml"
+                            bat "kubectl apply -f k8s/v1-service.yaml"
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Verify Rollout') {
+            steps {
+                script {
+                    if (isUnix()) {
+                        sh "kubectl rollout status deployment/lms-v1 --timeout=90s"
+                        sh "kubectl get svc lms-v1-service"
+                    } else {
+                        bat "kubectl rollout status deployment/lms-v1 --timeout=90s"
+                        bat "kubectl get svc lms-v1-service"
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "LMS v1 successfully built, pushed to DockerHub (${FULL_IMAGE}), and deployed to Kubernetes."
+        }
+        failure {
+            echo "Pipeline failed. Check Jenkins logs for details."
         }
     }
 }

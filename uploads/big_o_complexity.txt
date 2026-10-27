@@ -1,0 +1,12 @@
+BIG-O COMPLEXITY CHEATSHEET
+=============================================================
+Data Structure Operations:
+- Array: Access O(1), Search O(n), Insert O(n), Delete O(n)
+- Hash Table: Access O(1)*, Search O(1)*, Insert O(1)*, Delete O(1)*
+- Binary Search Tree: Access O(log n), Search O(log n), Insert O(log n)
+- Red-Black Tree: Access O(log n), Search O(log n), Insert O(log n)
+
+Sorting Complexities:
+- QuickSort: Best O(n log n), Average O(n log n), Worst O(n^2)
+- MergeSort: Best O(n log n), Average O(n log n), Worst O(n log n)
+- HeapSort: Best O(n log n), Average O(n log n), Worst O(n log n)

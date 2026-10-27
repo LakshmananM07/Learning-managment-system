@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Agile LMS - Minimalistic Study Material & Notes Management System.">
+  <title>AgileLMS - Study Material & Notes Hub</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="container header-inner">
+      <div class="logo-area">
+        <div class="logo-icon">📚</div>
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <a href="/" class="logo-title">AgileLMS</a>
+            <span class="logo-badge">Hub</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-search">
+        <div class="search-input-wrapper">
+          <span class="search-icon">🔍</span>
+          <input 
+            type="text" 
+            id="searchInput" 
+            class="search-input" 
+            placeholder="Search notes, topics, tags (e.g. Scrum, Algorithms)..." 
+            autocomplete="off"
+          >
+          <button id="searchClearBtn" class="search-clear" title="Clear search">✕</button>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="openCourseModalBtn" class="btn btn-secondary">
+          <span>➕</span>
+          <span>New Course</span>
+        </button>
+        <button id="openUploadModalBtn" class="btn btn-primary">
+          <span>📤</span>
+          <span>Upload Notes</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero-section">
+      <div class="hero-header">
+        <div class="hero-subtitle">Academic Resource Repository</div>
+        <h1 class="hero-title">Study Materials & Notes Central</h1>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">📄</div>
+          <div class="stat-info">
+            <span id="statTotalNotes" class="stat-value">0</span>
+            <span class="stat-label">Total Study Materials</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">🎓</div>
+          <div class="stat-info">
+            <span id="statTotalCourses" class="stat-value">0</span>
+            <span class="stat-label">Active Courses</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">📥</div>
+          <div class="stat-info">
+            <span id="statTotalDownloads" class="stat-value">0</span>
+            <span class="stat-label">Material Downloads</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">💾</div>
+          <div class="stat-info">
+            <span id="statTotalStorage" class="stat-value">0 KB</span>
+            <span class="stat-label">Storage Footprint</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="toolbar-section">
+      <div class="toolbar-card">
+        <div class="category-pills" id="categoryPills">
+          <button class="pill-btn active" data-category="all">All Subjects</button>
+          <button class="pill-btn" data-category="Computer Science">Computer Science</button>
+          <button class="pill-btn" data-category="Software Engineering">Software Engineering</button>
+          <button class="pill-btn" data-category="Artificial Intelligence">Artificial Intelligence</button>
+          <button class="pill-btn" data-category="Mathematics">Mathematics</button>
+        </div>
+
+        <div class="toolbar-controls">
+          <div class="controls-left">
+            <select id="courseSelectFilter" class="custom-select">
+              <option value="">All Courses</option>
+            </select>
+
+            <select id="sortBySelect" class="custom-select">
+              <option value="newest">Sort: Newest First</option>
+              <option value="downloads">Sort: Most Downloaded</option>
+              <option value="title">Sort: Title A-Z</option>
+              <option value="size">Sort: File Size</option>
+            </select>
+          </div>
+
+          <div class="controls-right">
+            <span id="itemsCounter" class="items-counter">Loading notes...</span>
+            <div class="view-toggle">
+              <button id="viewGridBtn" class="view-btn active" title="Grid View">🔲</button>
+              <button id="viewListBtn" class="view-btn" title="List View">☰</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="materials-section">
+      <div id="materialsGrid" class="materials-grid"></div>
+
+      <div id="materialsListView" class="materials-list-view" style="display: none;">
+        <table class="list-table">
+          <thead>
+            <tr>
+              <th>Title & Subject</th>
+              <th>Module / Unit</th>
+              <th>Uploaded By</th>
+              <th>Size</th>
+              <th>Downloads</th>
+              <th>Date</th>
+              <th style="text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="materialsTableBody"></tbody>
+        </table>
+      </div>
+
+      <div id="emptyState" class="empty-state" style="display: none;">
+        <div class="empty-icon">📂</div>
+        <h3 class="empty-title">No Study Materials Found</h3>
+        <p class="empty-desc">We couldn't find any materials matching your criteria. Try adjusting your search query or upload a new note.</p>
+        <button id="emptyUploadBtn" class="btn btn-primary">
+          <span>📤</span>
+          <span>Upload Study Material Now</span>
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <div id="uploadModal" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <span>📤</span>
+          <span>Upload Study Material</span>
+        </h3>
+        <button id="closeUploadModalBtn" class="modal-close-btn">&times;</button>
+      </div>
+
+      <form id="uploadForm" class="modal-body">
+        <div id="dropzone" class="dropzone">
+          <input type="file" id="fileInput" name="file" style="display: none;" required>
+          <div class="dropzone-icon">☁️</div>
+          <div class="dropzone-text">Drag & drop your study file here, or <span style="text-decoration: underline;">Browse</span></div>
+          <div class="dropzone-subtext">Supports PDF, Markdown (.md), Word (.docx), Code, Text, Slides, or Archives (Max 50MB)</div>
+        </div>
+
+        <div id="selectedFileBadge" class="selected-file-badge">
+          <span id="selectedFileName">filename.pdf</span>
+          <span id="selectedFileSize" style="font-size: 11px; opacity: 0.8;">1.2 MB</span>
+        </div>
+
+        <div class="form-group" style="margin-top: 14px;">
+          <label class="form-label" for="materialTitle">Document / Notes Title *</label>
+          <input type="text" id="materialTitle" name="title" class="form-control" placeholder="e.g. Unit 3: Dynamic Programming Notes" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="materialCourse">Course / Subject *</label>
+            <select id="materialCourse" name="course_id" class="form-control" required>
+              <option value="">Select Course...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="materialModule">Module / Chapter</label>
+            <input type="text" id="materialModule" name="module" class="form-control" placeholder="e.g. Chapter 4: Greedy Algorithms" value="General">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="materialTags">Tags (comma separated)</label>
+            <input type="text" id="materialTags" name="tags" class="form-control" placeholder="e.g. Algorithms, Exam Prep, Cheatsheet">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="materialUploader">Uploader Name</label>
+            <input type="text" id="materialUploader" name="uploader" class="form-control" placeholder="e.g. Instructor or Student" value="Instructor">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="materialDesc">Description / Key Highlights</label>
+          <textarea id="materialDesc" name="description" rows="3" class="form-control" placeholder="Brief summary of what this study material covers..."></textarea>
+        </div>
+
+        <div id="uploadProgressContainer" class="progress-container">
+          <div class="progress-bar-wrap">
+            <div id="uploadProgressBar" class="progress-bar"></div>
+          </div>
+          <div class="progress-status">
+            <span>Uploading study material...</span>
+            <span id="uploadPercent">0%</span>
+          </div>
+        </div>
+      </form>
+
+      <div class="modal-footer">
+        <button id="cancelUploadBtn" type="button" class="btn btn-secondary">Cancel</button>
+        <button id="submitUploadBtn" type="button" class="btn btn-primary">
+          <span>🚀</span>
+          <span>Upload Material</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="courseModal" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <span>🎓</span>
+          <span>Create New Course</span>
+        </h3>
+        <button id="closeCourseModalBtn" class="modal-close-btn">&times;</button>
+      </div>
+
+      <form id="courseForm" class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="courseCode">Course Code *</label>
+            <input type="text" id="courseCode" name="code" class="form-control" placeholder="e.g. CS202" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="courseCategory">Category / Field *</label>
+            <input type="text" id="courseCategory" name="category" class="form-control" placeholder="e.g. Computer Science" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="courseName">Course Title *</label>
+          <input type="text" id="courseName" name="name" class="form-control" placeholder="e.g. Operating Systems & Distributed Architecture" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="courseDescription">Course Syllabus / Overview</label>
+          <textarea id="courseDescription" name="description" rows="3" class="form-control" placeholder="Brief outline of syllabus and topics covered..."></textarea>
+        </div>
+      </form>
+
+      <div class="modal-footer">
+        <button id="cancelCourseBtn" type="button" class="btn btn-secondary">Cancel</button>
+        <button id="submitCourseBtn" type="button" class="btn btn-primary">Save Course</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="previewModal" class="modal-overlay">
+    <div class="modal-container preview-modal-container">
+      <div class="modal-header">
+        <div style="overflow: hidden;">
+          <h3 id="previewTitle" class="modal-title">Document Preview</h3>
+          <div id="previewMeta" style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">Loading...</div>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button id="copyPreviewBtn" class="btn btn-secondary btn-sm" title="Copy Content">Copy</button>
+          <a id="downloadFromPreviewBtn" class="btn btn-primary btn-sm" href="#" download>Download</a>
+          <button id="closePreviewModalBtn" class="modal-close-btn">&times;</button>
+        </div>
+      </div>
+
+      <div class="modal-body" style="padding: 16px;">
+        <div id="previewContainer">
+          <pre id="previewContentText" class="preview-content"></pre>
+          <iframe id="previewIframe" style="width: 100%; height: 55vh; border: none; border-radius: 8px; display: none;"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

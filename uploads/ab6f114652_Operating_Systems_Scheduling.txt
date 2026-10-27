@@ -1,0 +1,3 @@
+FCFS, SJF, and Round Robin scheduling algorithms notes.
+Quantum = 4ms.
+Context switch overhead: 0.1ms.

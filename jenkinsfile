@@ -49,8 +49,8 @@ pipeline {
                                 sh "echo \$DH_PASS | docker login -u \$DH_USER --password-stdin"
                                 sh "docker push ${FULL_IMAGE}"
                             } else {
-                                powershell "Write-Output \$env:DH_PASS | docker login -u \$env:DH_USER --password-stdin"
-                                bat "docker push ${FULL_IMAGE}"
+                                powershell "echo \$env:DH_PASS | docker login -u \$env:DH_USER --password-stdin"
+                                powershell "docker push ${FULL_IMAGE}"
                             }
                         }
                     }

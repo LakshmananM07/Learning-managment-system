@@ -44,14 +44,22 @@ pipeline {
             steps {
                 dir(params.PROJECT_DIR) {
                     script {
-                        withCredentials([usernamePassword(credentialsId: params.DOCKERHUB_CREDENTIALS_ID, usernameVariable: 'DH_USER', passwordVariable: 'DH_PASS')]) {
-                            if (isUnix()) {
-                                sh "echo \$DH_PASS | docker login -u \$DH_USER --password-stdin"
-                                sh "docker push ${FULL_IMAGE}"
-                            } else {
-                                powershell "echo \$env:DH_PASS | docker login -u \$env:DH_USER --password-stdin"
-                                powershell "docker push ${FULL_IMAGE}"
+                        try {
+                            withCredentials([usernamePassword(credentialsId: params.DOCKERHUB_CREDENTIALS_ID, usernameVariable: 'DH_USER', passwordVariable: 'DH_PASS')]) {
+                                if (isUnix()) {
+                                    sh "echo \$DH_PASS | docker login -u \$DH_USER --password-stdin"
+                                } else {
+                                    powershell "echo \$env:DH_PASS | docker login -u \$env:DH_USER --password-stdin"
+                                }
                             }
+                        } catch (Exception e) {
+                            echo "Docker login notification: ${e.message}. Attempting push directly..."
+                        }
+
+                        if (isUnix()) {
+                            sh "docker push ${FULL_IMAGE}"
+                        } else {
+                            powershell "docker push ${FULL_IMAGE}"
                         }
                     }
                 }

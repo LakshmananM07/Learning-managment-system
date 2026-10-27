@@ -11,6 +11,7 @@ pipeline {
 
     environment {
         FULL_IMAGE = "${params.DOCKERHUB_USERNAME}/${params.IMAGE_NAME}:${params.IMAGE_TAG}"
+        KUBECONFIG = "C:/Users/nivet/.kube/config"
     }
 
     stages {
@@ -66,8 +67,8 @@ pipeline {
                             sh "kubectl apply -f k8s/v1-deployment.yaml"
                             sh "kubectl apply -f k8s/v1-service.yaml"
                         } else {
-                            bat "kubectl apply -f k8s/v1-deployment.yaml"
-                            bat "kubectl apply -f k8s/v1-service.yaml"
+                            bat "kubectl --kubeconfig=\"%KUBECONFIG%\" apply -f k8s/v1-deployment.yaml"
+                            bat "kubectl --kubeconfig=\"%KUBECONFIG%\" apply -f k8s/v1-service.yaml"
                         }
                     }
                 }
@@ -81,8 +82,8 @@ pipeline {
                         sh "kubectl rollout status deployment/lms-v1 --timeout=90s"
                         sh "kubectl get svc lms-v1-service"
                     } else {
-                        bat "kubectl rollout status deployment/lms-v1 --timeout=90s"
-                        bat "kubectl get svc lms-v1-service"
+                        bat "kubectl --kubeconfig=\"%KUBECONFIG%\" rollout status deployment/lms-v1 --timeout=90s"
+                        bat "kubectl --kubeconfig=\"%KUBECONFIG%\" get svc lms-v1-service"
                     }
                 }
             }

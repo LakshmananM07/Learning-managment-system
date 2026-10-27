@@ -1,11 +1,13 @@
 import os
+import io
 import shutil
 import uuid
+import zipfile
 from typing import Optional
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from database import init_db, get_db_connection
 
 init_db()
@@ -19,7 +21,7 @@ os.makedirs(STATIC_DIR, exist_ok=True)
 app = FastAPI(
     title="Agile LMS",
     description="Minimalistic LMS with Study Material & Notes Management",
-    version="2.0.0"
+    version="3.0.0"
 )
 
 app.add_middleware(
@@ -188,6 +190,35 @@ async def upload_study_material(
         "size": format_file_size(file_size)
     }
 
+@app.get("/api/notes/download-all")
+def download_all_materials_zip():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM study_materials")
+    materials = cursor.fetchall()
+    
+    if not materials:
+        conn.close()
+        raise HTTPException(status_code=404, detail="No study materials available to download")
+
+    cursor.execute("UPDATE study_materials SET downloads = downloads + 1")
+    conn.commit()
+    conn.close()
+
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        for m in materials:
+            fpath = m["file_path"]
+            if os.path.exists(fpath):
+                zip_file.write(fpath, arcname=m["original_filename"])
+
+    zip_buffer.seek(0)
+    return StreamingResponse(
+        zip_buffer,
+        media_type="application/zip",
+        headers={"Content-Disposition": 'attachment; filename="all_study_materials.zip"'}
+    )
+
 @app.get("/api/notes/{material_id}")
 def get_note_detail(material_id: int):
     conn = get_db_connection()
@@ -231,7 +262,44 @@ def download_note(material_id: int):
     return FileResponse(
         path=file_path,
         filename=row["original_filename"],
-        media_type=row["file_type"]
+        media_type=row["file_type"] or "application/octet-stream",
+        headers={"Content-Disposition": f'attachment; filename="{row["original_filename"]}"'}
+    )
+
+@app.get("/api/courses/{course_id}/download-all")
+def download_course_notes_zip(course_id: int):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM courses WHERE id = ?", (course_id,))
+    course = cursor.fetchone()
+    if not course:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Course not found")
+        
+    cursor.execute("SELECT * FROM study_materials WHERE course_id = ?", (course_id,))
+    materials = cursor.fetchall()
+
+    if not materials:
+        conn.close()
+        raise HTTPException(status_code=404, detail="No materials found for this course")
+
+    cursor.execute("UPDATE study_materials SET downloads = downloads + 1 WHERE course_id = ?", (course_id,))
+    conn.commit()
+    conn.close()
+
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        for m in materials:
+            fpath = m["file_path"]
+            if os.path.exists(fpath):
+                zip_file.write(fpath, arcname=m["original_filename"])
+
+    zip_buffer.seek(0)
+    filename = f"{course['code']}_materials.zip"
+    return StreamingResponse(
+        zip_buffer,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )
 
 @app.get("/api/notes/{material_id}/preview")

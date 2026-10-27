@@ -20,6 +20,8 @@ const elements = {
   statTotalStorage: document.getElementById('statTotalStorage'),
   
   viewNotesNavBtn: document.getElementById('viewNotesNavBtn'),
+  downloadAllNavBtn: document.getElementById('downloadAllNavBtn'),
+  downloadCourseBtn: document.getElementById('downloadCourseBtn'),
   notesSection: document.getElementById('notesSection'),
   searchInput: document.getElementById('searchInput'),
   searchClearBtn: document.getElementById('searchClearBtn'),
@@ -99,6 +101,14 @@ function initEventListeners() {
     });
   }
 
+  if (elements.downloadAllNavBtn) {
+    elements.downloadAllNavBtn.addEventListener('click', downloadAllNotes);
+  }
+
+  if (elements.downloadCourseBtn) {
+    elements.downloadCourseBtn.addEventListener('click', downloadCourseNotes);
+  }
+
   let searchTimeout = null;
   elements.searchInput.addEventListener('input', (e) => {
     const val = e.target.value.trim();
@@ -128,7 +138,11 @@ function initEventListeners() {
   });
 
   elements.courseSelectFilter.addEventListener('change', (e) => {
-    state.filters.course_id = e.target.value;
+    const selectedCourseId = e.target.value;
+    state.filters.course_id = selectedCourseId;
+    if (elements.downloadCourseBtn) {
+      elements.downloadCourseBtn.style.display = selectedCourseId ? 'inline-flex' : 'none';
+    }
     loadMaterials();
   });
 
@@ -401,12 +415,15 @@ function renderMaterials(items) {
             <span class="file-info-item">${formattedDate}</span>
           </div>
 
-          <div class="card-actions" style="display: flex; align-items: center; gap: 8px;">
+          <div class="card-actions" style="display: flex; align-items: center; gap: 6px;">
             <button class="btn-view-notes" onclick="previewNote(${item.id})" title="View Notes & Display Material">
               <span>📖</span>
-              <span>View Notes</span>
+              <span>View</span>
             </button>
-            <button class="btn-action download" onclick="downloadNote(${item.id})" title="Download Material">📥</button>
+            <button class="btn-save-local" onclick="downloadNote(${item.id}, '${escapeHtml(item.original_filename)}')" title="Download & save file locally">
+              <span>💾</span>
+              <span>Save</span>
+            </button>
             <button class="btn-action delete" onclick="deleteNote(${item.id}, '${escapeHtml(item.title)}')" title="Delete Material">🗑️</button>
           </div>
         </div>
@@ -441,7 +458,10 @@ function renderMaterials(items) {
               <span>📖</span>
               <span>View</span>
             </button>
-            <button class="btn-action download" onclick="downloadNote(${item.id})" title="Download Material">📥</button>
+            <button class="btn-save-local" style="padding: 4px 10px; font-size: 11.5px;" onclick="downloadNote(${item.id}, '${escapeHtml(item.original_filename)}')" title="Save file locally">
+              <span>💾</span>
+              <span>Save</span>
+            </button>
             <button class="btn-action delete" onclick="deleteNote(${item.id}, '${escapeHtml(item.title)}')" title="Delete Material">🗑️</button>
           </div>
         </td>
@@ -561,14 +581,51 @@ async function handleCourseSubmit() {
   }
 }
 
-window.downloadNote = function(id) {
-  const downloadUrl = `/api/notes/${id}/download`;
-  window.open(downloadUrl, '_blank');
+window.downloadNote = function(id, filename) {
+  showToast(`Saving "${filename || 'file'}" to your local device...`, 'info');
+  const a = document.createElement('a');
+  a.href = `/api/notes/${id}/download`;
+  a.download = filename || '';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
   
   setTimeout(() => {
     loadStats();
     loadMaterials();
   }, 1000);
+};
+
+window.downloadAllNotes = function() {
+  showToast('Preparing zip package of all study materials...', 'info');
+  const a = document.createElement('a');
+  a.href = '/api/notes/download-all';
+  a.download = 'all_study_materials.zip';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  
+  setTimeout(() => {
+    loadStats();
+    loadMaterials();
+  }, 1500);
+};
+
+window.downloadCourseNotes = function() {
+  const courseId = state.filters.course_id;
+  if (!courseId) return;
+  showToast('Packaging course study materials into .zip...', 'info');
+  const a = document.createElement('a');
+  a.href = `/api/courses/${courseId}/download-all`;
+  a.download = 'course_materials.zip';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  
+  setTimeout(() => {
+    loadStats();
+    loadMaterials();
+  }, 1500);
 };
 
 window.previewNote = async function(id) {
@@ -579,8 +636,6 @@ window.previewNote = async function(id) {
     elements.previewContentText.textContent = 'Fetching and rendering note contents...';
     elements.previewIframe.style.display = 'none';
     elements.previewBinaryCard.style.display = 'none';
-    elements.downloadFromPreviewBtn.href = `/api/notes/${id}/download`;
-    elements.binaryDownloadBtn.href = `/api/notes/${id}/download`;
     elements.previewContentText.style.fontSize = `${state.fontSize}px`;
     
     openModal(elements.previewModal);
@@ -604,6 +659,11 @@ window.previewNote = async function(id) {
           <span class="preview-stat-badge">👤 ${escapeHtml(json.uploader || 'Instructor')}</span>
         `;
         
+        elements.downloadFromPreviewBtn.onclick = (e) => {
+          e.preventDefault();
+          downloadNote(id, json.original_filename);
+        };
+
         elements.previewContentText.style.display = 'block';
         elements.previewIframe.style.display = 'none';
         elements.previewBinaryCard.style.display = 'none';
@@ -615,7 +675,16 @@ window.previewNote = async function(id) {
         elements.previewIframe.style.display = 'none';
         elements.previewBinaryCard.style.display = 'flex';
         elements.binaryDocTitle.textContent = json.title;
-        elements.binaryDocMsg.textContent = json.message || 'This material format can be opened directly after download.';
+        elements.binaryDocMsg.textContent = json.message || 'This material format can be saved directly to your local device.';
+        
+        elements.binaryDownloadBtn.onclick = (e) => {
+          e.preventDefault();
+          downloadNote(id, json.original_filename);
+        };
+        elements.downloadFromPreviewBtn.onclick = (e) => {
+          e.preventDefault();
+          downloadNote(id, json.original_filename);
+        };
       } else {
         elements.previewContentText.textContent = json.message || 'No content preview available.';
       }
@@ -626,6 +695,11 @@ window.previewNote = async function(id) {
       elements.previewBinaryCard.style.display = 'none';
       elements.previewIframe.style.display = 'block';
       elements.previewIframe.src = `/api/notes/${id}/view`;
+      
+      elements.downloadFromPreviewBtn.onclick = (e) => {
+        e.preventDefault();
+        downloadNote(id, 'study_material');
+      };
     }
   } catch (err) {
     elements.previewContentText.textContent = 'Error loading material: ' + err.message;

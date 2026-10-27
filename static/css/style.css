@@ -944,6 +944,26 @@ button, input, select, textarea {
   background: var(--btn-dark-blue-hover);
 }
 
+.btn-save-local {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
+  border: 1px solid var(--border-subtle);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-save-local:hover {
+  background: var(--btn-secondary-hover);
+  border-color: var(--border-medium);
+}
+
 .toast-container {
   position: fixed;
   bottom: 20px;

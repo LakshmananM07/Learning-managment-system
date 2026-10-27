@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Agile LMS - Minimalistic Study Material & Notes Management System.">
-  <title>AgileLMS - View Notes & Display Materials</title>
+  <title>AgileLMS - Download & Save Materials Locally</title>
   <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
@@ -15,7 +15,7 @@
         <div>
           <div style="display: flex; align-items: center; gap: 8px;">
             <a href="/" class="logo-title">AgileLMS</a>
-            <span class="logo-badge">v2.0</span>
+            <span class="logo-badge">v3.0</span>
           </div>
         </div>
       </div>
@@ -39,6 +39,10 @@
           <span>📖</span>
           <span>View Notes</span>
         </button>
+        <button id="downloadAllNavBtn" class="btn btn-secondary" title="Download all study materials as a zip file">
+          <span>💾</span>
+          <span>Save All (.zip)</span>
+        </button>
         <button id="openCourseModalBtn" class="btn btn-secondary">
           <span>➕</span>
           <span>New Course</span>
@@ -54,8 +58,8 @@
   <main class="container">
     <section class="hero-section">
       <div class="hero-header">
-        <div class="hero-subtitle">Academic Resource Repository</div>
-        <h1 class="hero-title">View Notes – Display Materials</h1>
+        <div class="hero-subtitle">Academic Resource Repository & Local Storage Hub</div>
+        <h1 class="hero-title">Download – Save Files Locally</h1>
       </div>
 
       <div class="stats-grid">
@@ -108,6 +112,11 @@
             <select id="courseSelectFilter" class="custom-select">
               <option value="">All Courses</option>
             </select>
+
+            <button id="downloadCourseBtn" class="btn btn-secondary btn-sm" style="display: none; height: 38px;" title="Download all materials in selected course as .zip">
+              <span>💾</span>
+              <span>Save Course (.zip)</span>
+            </button>
 
             <select id="sortBySelect" class="custom-select">
               <option value="newest">Sort: Newest First</option>
@@ -295,7 +304,10 @@
           <button id="fontIncBtn" class="btn btn-secondary btn-sm" title="Increase font size">A+</button>
           <button id="copyPreviewBtn" class="btn btn-secondary btn-sm" title="Copy Content">Copy</button>
           <button id="fullscreenModalBtn" class="btn btn-secondary btn-sm" title="Fullscreen Reader">⛶</button>
-          <a id="downloadFromPreviewBtn" class="btn btn-primary btn-sm" href="#" download>Download</a>
+          <a id="downloadFromPreviewBtn" class="btn btn-primary btn-sm" href="#" download>
+            <span>💾</span>
+            <span>Save Locally</span>
+          </a>
           <button id="closePreviewModalBtn" class="modal-close-btn">&times;</button>
         </div>
       </div>
@@ -309,8 +321,8 @@
             <h4 id="binaryDocTitle" style="font-size: 16px; margin-bottom: 6px;">Document Ready</h4>
             <p id="binaryDocMsg" style="color: var(--text-muted); font-size: 13px; max-width: 400px; margin-bottom: 16px;"></p>
             <a id="binaryDownloadBtn" class="btn btn-primary" href="#" download>
-              <span>📥</span>
-              <span>Download & Open File</span>
+              <span>💾</span>
+              <span>Download & Save File Locally</span>
             </a>
           </div>
         </div>

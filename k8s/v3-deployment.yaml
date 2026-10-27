@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lms-v3
+  labels:
+    app: lms
+    version: v3
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: lms
+      version: v3
+  template:
+    metadata:
+      labels:
+        app: lms
+        version: v3
+    spec:
+      containers:
+      - name: lms
+        image: lakshmanan2007/lms:v3
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+        readinessProbe:
+          httpGet:
+            path: /api/stats
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /api/stats
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 15

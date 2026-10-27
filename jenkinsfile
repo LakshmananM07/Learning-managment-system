@@ -6,7 +6,7 @@ pipeline {
         string(name: 'IMAGE_NAME', defaultValue: 'lms', description: 'Docker Repository Name')
         string(name: 'IMAGE_TAG', defaultValue: 'v1', description: 'Image Tag')
         string(name: 'DOCKERHUB_CREDENTIALS_ID', defaultValue: 'lakshmanan2007', description: 'Jenkins Credentials ID for DockerHub')
-        string(name: 'PROJECT_DIR', defaultValue: 'E:/Agile', description: 'Project Directory')
+        string(name: 'PROJECT_DIR', defaultValue: '.', description: 'Project Directory')
     }
 
     environment {
@@ -20,7 +20,7 @@ pipeline {
                     try {
                         checkout scm
                     } catch (Exception e) {
-                        echo "No SCM configured, using local directory: ${params.PROJECT_DIR}"
+                        echo "No SCM configured or using local directory: ${params.PROJECT_DIR}"
                     }
                 }
             }
@@ -49,7 +49,7 @@ pipeline {
                                 sh "echo \$DH_PASS | docker login -u \$DH_USER --password-stdin"
                                 sh "docker push ${FULL_IMAGE}"
                             } else {
-                                bat "echo %DH_PASS% | docker login -u %DH_USER% --password-stdin"
+                                powershell "Write-Output \$env:DH_PASS | docker login -u \$env:DH_USER --password-stdin"
                                 bat "docker push ${FULL_IMAGE}"
                             }
                         }

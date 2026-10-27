@@ -4,7 +4,7 @@ pipeline {
     parameters {
         string(name: 'DOCKERHUB_USERNAME', defaultValue: 'lakshmanan2007', description: 'DockerHub Username')
         string(name: 'IMAGE_NAME', defaultValue: 'lms', description: 'Docker Repository Name')
-        string(name: 'IMAGE_TAG', defaultValue: 'v1', description: 'Image Tag')
+        string(name: 'IMAGE_TAG', defaultValue: 'v2', description: 'Image Tag')
         string(name: 'DOCKERHUB_CREDENTIALS_ID', defaultValue: 'lakshmanan2007', description: 'Jenkins Credentials ID for DockerHub')
         string(name: 'PROJECT_DIR', defaultValue: '.', description: 'Project Directory')
     }
@@ -64,11 +64,11 @@ pipeline {
                 dir(params.PROJECT_DIR) {
                     script {
                         if (isUnix()) {
-                            sh "kubectl apply -f k8s/v1-deployment.yaml"
-                            sh "kubectl apply -f k8s/v1-service.yaml"
+                            sh "kubectl apply -f k8s/v2-deployment.yaml"
+                            sh "kubectl apply -f k8s/v2-service.yaml"
                         } else {
-                            bat "kubectl --kubeconfig=\"%KUBECONFIG%\" apply -f k8s/v1-deployment.yaml"
-                            bat "kubectl --kubeconfig=\"%KUBECONFIG%\" apply -f k8s/v1-service.yaml"
+                            bat "kubectl --kubeconfig=\"%KUBECONFIG%\" apply -f k8s/v2-deployment.yaml"
+                            bat "kubectl --kubeconfig=\"%KUBECONFIG%\" apply -f k8s/v2-service.yaml"
                         }
                     }
                 }
@@ -79,11 +79,11 @@ pipeline {
             steps {
                 script {
                     if (isUnix()) {
-                        sh "kubectl rollout status deployment/lms-v1 --timeout=90s"
-                        sh "kubectl get svc lms-v1-service"
+                        sh "kubectl rollout status deployment/lms-v2 --timeout=90s"
+                        sh "kubectl get svc lms-v2-service"
                     } else {
-                        bat "kubectl --kubeconfig=\"%KUBECONFIG%\" rollout status deployment/lms-v1 --timeout=90s"
-                        bat "kubectl --kubeconfig=\"%KUBECONFIG%\" get svc lms-v1-service"
+                        bat "kubectl --kubeconfig=\"%KUBECONFIG%\" rollout status deployment/lms-v2 --timeout=90s"
+                        bat "kubectl --kubeconfig=\"%KUBECONFIG%\" get svc lms-v2-service"
                     }
                 }
             }
@@ -92,7 +92,7 @@ pipeline {
 
     post {
         success {
-            echo "LMS v1 successfully built, pushed to DockerHub (${FULL_IMAGE}), and deployed to Kubernetes."
+            echo "LMS v2 successfully built, pushed to DockerHub (${FULL_IMAGE}), and deployed to Kubernetes."
         }
         failure {
             echo "Pipeline failed. Check Jenkins logs for details."

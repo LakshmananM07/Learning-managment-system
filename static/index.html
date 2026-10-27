@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Agile LMS - Minimalistic Study Material & Notes Management System.">
-  <title>AgileLMS - Study Material & Notes Hub</title>
+  <title>AgileLMS - View Notes & Display Materials</title>
   <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
@@ -15,7 +15,7 @@
         <div>
           <div style="display: flex; align-items: center; gap: 8px;">
             <a href="/" class="logo-title">AgileLMS</a>
-            <span class="logo-badge">Hub</span>
+            <span class="logo-badge">v2.0</span>
           </div>
         </div>
       </div>
@@ -35,6 +35,10 @@
       </div>
 
       <div class="header-actions">
+        <button id="viewNotesNavBtn" class="btn btn-secondary">
+          <span>📖</span>
+          <span>View Notes</span>
+        </button>
         <button id="openCourseModalBtn" class="btn btn-secondary">
           <span>➕</span>
           <span>New Course</span>
@@ -51,7 +55,7 @@
     <section class="hero-section">
       <div class="hero-header">
         <div class="hero-subtitle">Academic Resource Repository</div>
-        <h1 class="hero-title">Study Materials & Notes Central</h1>
+        <h1 class="hero-title">View Notes – Display Materials</h1>
       </div>
 
       <div class="stats-grid">
@@ -89,7 +93,7 @@
       </div>
     </section>
 
-    <section class="toolbar-section">
+    <section class="toolbar-section" id="notesSection">
       <div class="toolbar-card">
         <div class="category-pills" id="categoryPills">
           <button class="pill-btn active" data-category="all">All Subjects</button>
@@ -275,14 +279,22 @@
   </div>
 
   <div id="previewModal" class="modal-overlay">
-    <div class="modal-container preview-modal-container">
+    <div class="modal-container preview-modal-container" id="previewModalContainer">
       <div class="modal-header">
-        <div style="overflow: hidden;">
-          <h3 id="previewTitle" class="modal-title">Document Preview</h3>
-          <div id="previewMeta" style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">Loading...</div>
+        <div style="overflow: hidden; max-width: 65%;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <span class="preview-badge" id="previewBadgeType">Notes</span>
+            <span class="course-code-pill" id="previewCourseCode">CS101</span>
+            <span class="module-pill" id="previewModule">Module</span>
+          </div>
+          <h3 id="previewTitle" class="modal-title" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Document Viewer</h3>
+          <div id="previewMeta" style="font-size: 12px; color: var(--text-dim); margin-top: 4px; display: flex; gap: 12px; flex-wrap: wrap;"></div>
         </div>
-        <div style="display: flex; gap: 8px; align-items: center;">
+        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+          <button id="fontDecBtn" class="btn btn-secondary btn-sm" title="Decrease font size">A-</button>
+          <button id="fontIncBtn" class="btn btn-secondary btn-sm" title="Increase font size">A+</button>
           <button id="copyPreviewBtn" class="btn btn-secondary btn-sm" title="Copy Content">Copy</button>
+          <button id="fullscreenModalBtn" class="btn btn-secondary btn-sm" title="Fullscreen Reader">⛶</button>
           <a id="downloadFromPreviewBtn" class="btn btn-primary btn-sm" href="#" download>Download</a>
           <button id="closePreviewModalBtn" class="modal-close-btn">&times;</button>
         </div>
@@ -291,7 +303,16 @@
       <div class="modal-body" style="padding: 16px;">
         <div id="previewContainer">
           <pre id="previewContentText" class="preview-content"></pre>
-          <iframe id="previewIframe" style="width: 100%; height: 55vh; border: none; border-radius: 8px; display: none;"></iframe>
+          <iframe id="previewIframe" style="width: 100%; height: 60vh; border: none; border-radius: 8px; display: none;"></iframe>
+          <div id="previewBinaryCard" class="binary-display-card" style="display: none;">
+            <div style="font-size: 40px; margin-bottom: 12px;">📁</div>
+            <h4 id="binaryDocTitle" style="font-size: 16px; margin-bottom: 6px;">Document Ready</h4>
+            <p id="binaryDocMsg" style="color: var(--text-muted); font-size: 13px; max-width: 400px; margin-bottom: 16px;"></p>
+            <a id="binaryDownloadBtn" class="btn btn-primary" href="#" download>
+              <span>📥</span>
+              <span>Download & Open File</span>
+            </a>
+          </div>
         </div>
       </div>
     </div>

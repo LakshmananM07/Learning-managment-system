@@ -19,7 +19,7 @@ os.makedirs(STATIC_DIR, exist_ok=True)
 app = FastAPI(
     title="Agile LMS",
     description="Minimalistic LMS with Study Material & Notes Management",
-    version="1.0.0"
+    version="2.0.0"
 )
 
 app.add_middleware(
@@ -238,7 +238,12 @@ def download_note(material_id: int):
 def preview_note(material_id: int):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM study_materials WHERE id = ?", (material_id,))
+    cursor.execute("""
+        SELECT s.*, c.name as course_name, c.code as course_code, c.category as course_category
+        FROM study_materials s
+        LEFT JOIN courses c ON s.course_id = c.id
+        WHERE s.id = ?
+    """, (material_id,))
     row = cursor.fetchone()
     conn.close()
 
@@ -256,13 +261,24 @@ def preview_note(material_id: int):
         try:
             with open(file_path, "r", encoding="utf-8", errors="replace") as f:
                 content = f.read(100000)
+            words = len(content.split())
+            lines = len(content.splitlines())
+            read_time = max(1, round(words / 200))
             return {
                 "status": "success",
                 "preview_type": "text",
                 "extension": ext,
                 "content": content,
                 "title": row["title"],
-                "original_filename": row["original_filename"]
+                "original_filename": row["original_filename"],
+                "course_code": row["course_code"],
+                "course_name": row["course_name"],
+                "module": row["module"],
+                "uploader": row["uploader"],
+                "formatted_size": format_file_size(row["file_size"]),
+                "word_count": words,
+                "line_count": lines,
+                "reading_time": read_time
             }
         except Exception as e:
             return {
@@ -283,6 +299,10 @@ def preview_note(material_id: int):
             "original_filename": row["original_filename"],
             "formatted_size": format_file_size(row["file_size"])
         }
+
+@app.get("/api/notes/{material_id}/view")
+def view_note_detail(material_id: int):
+    return preview_note(material_id)
 
 @app.delete("/api/notes/{material_id}")
 def delete_note(material_id: int):

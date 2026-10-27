@@ -9,7 +9,8 @@ const state = {
     sort_by: 'newest'
   },
   viewMode: 'grid',
-  currentPreviewNote: null
+  currentPreviewNote: null,
+  fontSize: 13.5
 };
 
 const elements = {
@@ -18,6 +19,8 @@ const elements = {
   statTotalDownloads: document.getElementById('statTotalDownloads'),
   statTotalStorage: document.getElementById('statTotalStorage'),
   
+  viewNotesNavBtn: document.getElementById('viewNotesNavBtn'),
+  notesSection: document.getElementById('notesSection'),
   searchInput: document.getElementById('searchInput'),
   searchClearBtn: document.getElementById('searchClearBtn'),
   categoryPills: document.getElementById('categoryPills'),
@@ -58,11 +61,22 @@ const elements = {
   courseForm: document.getElementById('courseForm'),
 
   previewModal: document.getElementById('previewModal'),
+  previewModalContainer: document.getElementById('previewModalContainer'),
   closePreviewModalBtn: document.getElementById('closePreviewModalBtn'),
   previewTitle: document.getElementById('previewTitle'),
   previewMeta: document.getElementById('previewMeta'),
+  previewBadgeType: document.getElementById('previewBadgeType'),
+  previewCourseCode: document.getElementById('previewCourseCode'),
+  previewModule: document.getElementById('previewModule'),
   previewContentText: document.getElementById('previewContentText'),
   previewIframe: document.getElementById('previewIframe'),
+  previewBinaryCard: document.getElementById('previewBinaryCard'),
+  binaryDocTitle: document.getElementById('binaryDocTitle'),
+  binaryDocMsg: document.getElementById('binaryDocMsg'),
+  binaryDownloadBtn: document.getElementById('binaryDownloadBtn'),
+  fontDecBtn: document.getElementById('fontDecBtn'),
+  fontIncBtn: document.getElementById('fontIncBtn'),
+  fullscreenModalBtn: document.getElementById('fullscreenModalBtn'),
   copyPreviewBtn: document.getElementById('copyPreviewBtn'),
   downloadFromPreviewBtn: document.getElementById('downloadFromPreviewBtn'),
 
@@ -77,6 +91,14 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initEventListeners() {
+  if (elements.viewNotesNavBtn) {
+    elements.viewNotesNavBtn.addEventListener('click', () => {
+      if (elements.notesSection) {
+        elements.notesSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+  }
+
   let searchTimeout = null;
   elements.searchInput.addEventListener('input', (e) => {
     const val = e.target.value.trim();
@@ -129,6 +151,32 @@ function initEventListeners() {
 
   elements.closePreviewModalBtn.addEventListener('click', () => closeModal(elements.previewModal));
 
+  if (elements.fontIncBtn) {
+    elements.fontIncBtn.addEventListener('click', () => {
+      if (state.fontSize < 24) {
+        state.fontSize += 1.5;
+        elements.previewContentText.style.fontSize = `${state.fontSize}px`;
+      }
+    });
+  }
+
+  if (elements.fontDecBtn) {
+    elements.fontDecBtn.addEventListener('click', () => {
+      if (state.fontSize > 10.5) {
+        state.fontSize -= 1.5;
+        elements.previewContentText.style.fontSize = `${state.fontSize}px`;
+      }
+    });
+  }
+
+  if (elements.fullscreenModalBtn) {
+    elements.fullscreenModalBtn.addEventListener('click', () => {
+      elements.previewModalContainer.classList.toggle('fullscreen');
+      const isFull = elements.previewModalContainer.classList.contains('fullscreen');
+      elements.fullscreenModalBtn.textContent = isFull ? '✕' : '⛶';
+    });
+  }
+
   [elements.uploadModal, elements.courseModal, elements.previewModal].forEach(modal => {
     modal.addEventListener('click', (e) => {
       if (e.target === modal) closeModal(modal);
@@ -153,7 +201,7 @@ function initEventListeners() {
   elements.copyPreviewBtn.addEventListener('click', () => {
     if (elements.previewContentText.innerText) {
       navigator.clipboard.writeText(elements.previewContentText.innerText);
-      showToast('Content copied to clipboard', 'info');
+      showToast('Study notes content copied to clipboard', 'info');
     }
   });
 }
@@ -181,6 +229,10 @@ function openModal(modal) {
 function closeModal(modal) {
   modal.classList.remove('active');
   document.body.style.overflow = '';
+  if (modal === elements.previewModal && elements.previewModalContainer) {
+    elements.previewModalContainer.classList.remove('fullscreen');
+    if (elements.fullscreenModalBtn) elements.fullscreenModalBtn.textContent = '⛶';
+  }
 }
 
 function setupDropzone() {
@@ -349,8 +401,11 @@ function renderMaterials(items) {
             <span class="file-info-item">${formattedDate}</span>
           </div>
 
-          <div class="card-actions">
-            <button class="btn-action preview" onclick="previewNote(${item.id})" title="Preview Document">👁️</button>
+          <div class="card-actions" style="display: flex; align-items: center; gap: 8px;">
+            <button class="btn-view-notes" onclick="previewNote(${item.id})" title="View Notes & Display Material">
+              <span>📖</span>
+              <span>View Notes</span>
+            </button>
             <button class="btn-action download" onclick="downloadNote(${item.id})" title="Download Material">📥</button>
             <button class="btn-action delete" onclick="deleteNote(${item.id}, '${escapeHtml(item.title)}')" title="Delete Material">🗑️</button>
           </div>
@@ -381,8 +436,11 @@ function renderMaterials(items) {
         <td><span style="font-size: 13px; font-weight: 600;">${item.downloads}</span></td>
         <td><span style="font-size: 12px; color: var(--text-dim);">${formattedDate}</span></td>
         <td style="text-align: right;">
-          <div style="display: flex; gap: 4px; justify-content: flex-end;">
-            <button class="btn-action preview" onclick="previewNote(${item.id})" title="Preview Document">👁️</button>
+          <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
+            <button class="btn-view-notes" style="padding: 4px 10px; font-size: 11.5px;" onclick="previewNote(${item.id})">
+              <span>📖</span>
+              <span>View</span>
+            </button>
             <button class="btn-action download" onclick="downloadNote(${item.id})" title="Download Material">📥</button>
             <button class="btn-action delete" onclick="deleteNote(${item.id}, '${escapeHtml(item.title)}')" title="Delete Material">🗑️</button>
           </div>
@@ -515,37 +573,62 @@ window.downloadNote = function(id) {
 
 window.previewNote = async function(id) {
   try {
-    elements.previewTitle.textContent = 'Loading document...';
-    elements.previewMeta.textContent = '';
+    elements.previewTitle.textContent = 'Loading study material...';
+    elements.previewMeta.innerHTML = '';
     elements.previewContentText.style.display = 'block';
-    elements.previewContentText.textContent = 'Fetching preview content...';
+    elements.previewContentText.textContent = 'Fetching and rendering note contents...';
     elements.previewIframe.style.display = 'none';
+    elements.previewBinaryCard.style.display = 'none';
     elements.downloadFromPreviewBtn.href = `/api/notes/${id}/download`;
+    elements.binaryDownloadBtn.href = `/api/notes/${id}/download`;
+    elements.previewContentText.style.fontSize = `${state.fontSize}px`;
+    
     openModal(elements.previewModal);
 
-    const res = await fetch(`/api/notes/${id}/preview`);
+    const res = await fetch(`/api/notes/${id}/view`);
     const contentType = res.headers.get("content-type");
 
     if (contentType && contentType.includes("application/json")) {
       const json = await res.json();
-      if (json.status === 'success') {
+      if (json.status === 'success' && json.preview_type === 'text') {
         elements.previewTitle.textContent = json.title;
-        elements.previewMeta.textContent = `${json.original_filename}`;
+        elements.previewBadgeType.textContent = (json.extension || 'TEXT').toUpperCase().replace('.', '');
+        elements.previewCourseCode.textContent = json.course_code || 'General';
+        elements.previewModule.textContent = json.module || 'General';
+        
+        elements.previewMeta.innerHTML = `
+          <span class="preview-stat-badge">⏱️ ${json.reading_time || 1} min read</span>
+          <span class="preview-stat-badge">📝 ${json.word_count || 0} words</span>
+          <span class="preview-stat-badge">📄 ${json.line_count || 0} lines</span>
+          <span class="preview-stat-badge">💾 ${json.formatted_size || ''}</span>
+          <span class="preview-stat-badge">👤 ${escapeHtml(json.uploader || 'Instructor')}</span>
+        `;
+        
         elements.previewContentText.style.display = 'block';
         elements.previewIframe.style.display = 'none';
-        elements.previewContentText.textContent = json.content || json.message;
+        elements.previewBinaryCard.style.display = 'none';
+        elements.previewContentText.textContent = json.content || '';
+      } else if (json.status === 'success' && json.preview_type === 'binary') {
+        elements.previewTitle.textContent = json.title;
+        elements.previewBadgeType.textContent = 'BINARY';
+        elements.previewContentText.style.display = 'none';
+        elements.previewIframe.style.display = 'none';
+        elements.previewBinaryCard.style.display = 'flex';
+        elements.binaryDocTitle.textContent = json.title;
+        elements.binaryDocMsg.textContent = json.message || 'This material format can be opened directly after download.';
       } else {
-        elements.previewContentText.textContent = json.message || 'No preview available.';
+        elements.previewContentText.textContent = json.message || 'No content preview available.';
       }
     } else if (contentType && (contentType.includes("pdf") || contentType.includes("image"))) {
       elements.previewTitle.textContent = 'Document Viewer';
-      elements.previewMeta.textContent = 'File Preview';
+      elements.previewBadgeType.textContent = contentType.includes("pdf") ? 'PDF' : 'IMAGE';
       elements.previewContentText.style.display = 'none';
+      elements.previewBinaryCard.style.display = 'none';
       elements.previewIframe.style.display = 'block';
-      elements.previewIframe.src = `/api/notes/${id}/preview`;
+      elements.previewIframe.src = `/api/notes/${id}/view`;
     }
   } catch (err) {
-    elements.previewContentText.textContent = 'Error loading preview: ' + err.message;
+    elements.previewContentText.textContent = 'Error loading material: ' + err.message;
   }
 };
 

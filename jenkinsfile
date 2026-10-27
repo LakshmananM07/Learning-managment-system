@@ -1,0 +1,12 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Verify Jenkins') {
+            steps {
+                bat 'git --version'
+                echo 'LMS v1 Jenkins pipeline is working'
+            }
+        }
+    }
+}
